@@ -24,7 +24,7 @@ export default function JoinQuiz() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4 bg-gradient-to-br from-indigo-600 to-purple-700 text-slate-800">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 bg-linear-to-br from-indigo-600 to-purple-700 text-slate-800">
       <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-2xl">
         <h2 className="text-2xl font-bold text-center text-indigo-600 mb-1">Masuk Room Kuis</h2>
         <p className="text-xs text-center text-slate-400 mb-6">Masukkan kode akses unik dari pengajar Anda</p>

@@ -12,7 +12,7 @@ export default function ChooseRole() {
       {/* Bagian Judul */}
       <div className="text-center text-white mb-12 animate-fade-in">
         <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-md">
-          SISTEM APLIKASI KUIS
+          APLIKASI KUIS
         </h1>
         <p className="text-amber-400 font-semibold tracking-widest text-xs uppercase mt-2">
           UNIVERSITAS PERJUANGAN TASIKMALAYA

@@ -7,7 +7,7 @@ export default function ChooseRole() {
 
   return (
     // Menggunakan gradasi diagonal yang kuat dari indigo ke purple (menjamin background berwarna)
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-900 via-indigo-700 to-purple-800 px-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-indigo-900 via-indigo-700 to-purple-800 px-4">
       
       {/* Bagian Judul */}
       <div className="text-center text-white mb-12 animate-fade-in">

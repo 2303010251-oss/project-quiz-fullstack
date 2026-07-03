@@ -15,7 +15,7 @@ export default function ChooseRole() {
           APLIKASI KUIS
         </h1>
         <p className="text-amber-400 font-semibold tracking-widest text-xs uppercase mt-2">
-          UNIVERSITAS PERJUANGAN TASIKMALAYA
+          UNIVERSITAS PERJUANGAN 
         </p>
       </div>
       

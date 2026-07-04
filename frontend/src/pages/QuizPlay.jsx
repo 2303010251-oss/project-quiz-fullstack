@@ -1,20 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
 export default function QuizPlay() {
-  const { quizId } = useParams();
   const navigate = useNavigate();
-  
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Timer state
+  const [timeLeft, setTimeLeft] = useState(15);
+  const timerRef = useRef(null);
+
+  // Load quiz id from localStorage
+  const quizId = localStorage.getItem('joined_quiz_id') || '1';
+  const participantId = localStorage.getItem('id_peserta') || '101';
 
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        // Ambil data soal berdasarkan kuis (/api/question) sesuai laporan
+        setLoading(true);
         const response = await API.get(`/question?quiz_id=${quizId}`);
         setQuestions(response.data);
       } catch (err) {
@@ -26,13 +32,45 @@ export default function QuizPlay() {
     fetchQuestions();
   }, [quizId]);
 
+  // Handle countdown timer
+  useEffect(() => {
+    if (loading || questions.length === 0 || currentIndex >= questions.length) return;
+
+    // Reset timer for the new question
+    setTimeLeft(15);
+
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          handleTimeOut();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentIndex, loading, questions]);
+
+  const handleTimeOut = () => {
+    // Act as if answered wrong/empty and proceed
+    handleAnswerSubmit('-');
+  };
+
   const handleAnswerSubmit = async (selectedOption) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
     try {
       const currentQuestion = questions[currentIndex];
       
-      // Kirim jawaban peserta ke endpoint /api/answer (POST) sesuai laporan
+      // Submit answer to the mock API
       await API.post('/answer', {
-        id_peserta: localStorage.getItem('id_peserta'), // Diambil saat di room nama
+        id_peserta: participantId,
         id_soal: currentQuestion.id_soal,
         jawaban_pilihan: selectedOption
       });
@@ -41,55 +79,125 @@ export default function QuizPlay() {
       if (currentIndex + 1 < questions.length) {
         setCurrentIndex(currentIndex + 1);
       } else {
-        // Jika soal habis, hitung hasil kuis (/api/results POST) dan lempar ke leaderboard
-        await API.post('/results', { id_quiz: quizId, id_peserta: localStorage.getItem('id_peserta') });
-        navigate(`/leaderboard/${quizId}`);
+        // Jika soal habis, hitung hasil kuis dan lempar ke leaderboard
+        await API.post('/results', { id_quiz: quizId, id_peserta: participantId });
+        
+        // Also update the active room status to finished if needed
+        const roomStr = localStorage.getItem('db_active_room');
+        if (roomStr) {
+          const room = JSON.parse(roomStr);
+          // If we are simulating, we can set it to finished
+          room.status = 'finished';
+          localStorage.setItem('db_active_room', JSON.stringify(room));
+          window.dispatchEvent(new Event('storage_update'));
+        }
+
+        navigate('/leaderboard');
       }
     } catch (err) {
-      alert('Gagal mengirim jawaban, periksa jaringan Anda.');
+      alert('Gagal mengirim jawaban.');
     }
   };
 
-  if (loading) return <div className="text-center mt-20 text-indigo-600 font-semibold">Memuat Soal Kuis Live...</div>;
-  if (error) return <div className="text-center mt-20 text-red-500 font-semibold">{error}</div>;
-  if (questions.length === 0) return <div className="text-center mt-20">Kuis ini belum memiliki soal.</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0B1B3D]">
+        <div className="text-center text-blue-400 font-bold text-sm">Memuat Soal Kuis Live...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0B1B3D]">
+        <div className="text-center text-red-400 font-bold text-sm">{error}</div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0B1B3D]">
+        <div className="text-center text-slate-400 text-sm">Kuis ini belum memiliki soal.</div>
+      </div>
+    );
+  }
 
   const currentQuestion = questions[currentIndex];
 
+  // Colors mapping for option circle outlines/borders (Page 18 screenshot matches)
+  const optionColors = [
+    { border: 'border-red-500 hover:bg-red-500/5', circle: 'border-red-500 text-red-500 bg-red-500/10' },     // A (Red)
+    { border: 'border-blue-500 hover:bg-blue-500/5', circle: 'border-blue-500 text-blue-500 bg-blue-500/10' },   // B (Blue)
+    { border: 'border-green-500 hover:bg-green-500/5', circle: 'border-green-500 text-green-500 bg-green-500/10' }, // C (Green)
+    { border: 'border-orange-500 hover:bg-orange-500/5', circle: 'border-orange-500 text-orange-500 bg-orange-500/10' } // D (Orange)
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      {/* Progress Bar Soal */}
-      <div className="flex justify-between items-center mb-6">
-        <span className="text-sm font-medium text-slate-500">Soal {currentIndex + 1} dari {questions.length}</span>
-        <div className="w-1/2 bg-slate-200 rounded-full h-2.5">
-          <div className="bg-indigo-600 h-2.5 rounded-full" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}></div>
+    <div className="flex items-center justify-center min-h-screen bg-[#0B1B3D] px-4 py-8">
+      {/* Mobile-style Viewport Frame */}
+      <div className="w-full max-w-sm bg-[#0B1B3D] flex flex-col justify-between h-[640px] text-white shadow-2xl rounded-3xl overflow-hidden border border-white/5">
+        
+        {/* Status Bar simulation */}
+        <div className="flex justify-between items-center text-xs px-6 pt-3 opacity-80 bg-[#07132B]">
+          <span>13:46</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 bg-white/20 rounded-full flex items-center justify-center text-[8px]">⚡</span>
+            <span className="w-4.5 h-3 bg-white/20 rounded-xs"></span>
+          </div>
         </div>
-      </div>
 
-      {/* Box Pertanyaan - Mengikuti Kamus Data Lap. (Pertanyaan, Opsi A-D) */}
-      <div className="bg-white rounded-2xl shadow-md p-8 mb-6 border border-slate-100">
-        <h3 className="text-xl font-semibold text-slate-800 leading-relaxed">
-          {currentQuestion.pertanyaan}
-        </h3>
-      </div>
+        {/* Question Header & Timer (Matches Page 18, item 8 right) */}
+        <div className="px-6 pt-4 flex flex-col items-center gap-2">
+          {/* Timer Circle */}
+          <div className="w-16 h-16 rounded-full border-4 border-red-500 flex items-center justify-center text-red-500 font-extrabold text-xl animate-pulse">
+            {timeLeft}
+          </div>
+          
+          {/* Progress index */}
+          <span className="text-slate-400 text-xs font-bold mt-1">
+            {currentIndex + 1} / {questions.length}
+          </span>
+        </div>
 
-      {/* Grid Pilihan Jawaban Ganda (Opsi A, B, C, D) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {['opsi_a', 'opsi_b', 'opsi_c', 'opsi_d'].map((key, index) => {
-          const labelOption = ['A', 'B', 'C', 'D'];
-          return (
-            <button
-              key={key}
-              onClick={() => handleAnswerSubmit(labelOption[index])}
-              className="flex items-center p-5 bg-white hover:bg-indigo-50 border-2 border-slate-200 hover:border-indigo-500 rounded-xl transition duration-200 text-left shadow-sm"
-            >
-              <span className="w-8 h-8 flex items-center justify-center bg-slate-100 text-indigo-600 font-bold rounded-lg mr-4 group-hover:bg-indigo-600">
-                {labelOption[index]}
-              </span>
-              <span className="text-slate-700 font-medium">{currentQuestion[key]}</span>
-            </button>
-          );
-        })}
+        {/* Question Card */}
+        <div className="px-6 flex-1 flex flex-col justify-center my-4">
+          <div className="bg-white/5 border border-white/10 p-5 rounded-2xl shadow-inner min-h-[110px] flex items-center justify-center text-center">
+            <h3 className="text-sm font-bold text-slate-100 leading-relaxed">
+              {currentQuestion.pertanyaan}
+            </h3>
+          </div>
+        </div>
+
+        {/* Colored Options Grid (Page 18, item 8 right matches) */}
+        <div className="px-6 pb-6 space-y-2.5">
+          {['opsi_a', 'opsi_b', 'opsi_c', 'opsi_d'].map((key, index) => {
+            const labelOption = ['A', 'B', 'C', 'D'];
+            const style = optionColors[index];
+            return (
+              <button
+                key={key}
+                onClick={() => handleAnswerSubmit(labelOption[index])}
+                className={`w-full flex items-center p-3 bg-[#07132B] hover:bg-white/5 active:bg-white/10 border-2 rounded-2xl transition duration-150 text-left shadow-sm ${style.border}`}
+              >
+                <span className={`w-8 h-8 flex items-center justify-center border-2 font-bold rounded-full mr-3 shrink-0 text-sm ${style.circle}`}>
+                  {labelOption[index]}
+                </span>
+                <span className="text-slate-200 font-bold text-xs">
+                  {currentQuestion[key]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer simulation */}
+        <div className="flex justify-around items-center py-3 border-t border-white/5 text-white/50 text-xs bg-[#07132B]">
+          <button className="hover:text-white transition">☰</button>
+          <button className="hover:text-white transition">⌂</button>
+          <button className="hover:text-white transition">⟨</button>
+        </div>
+
       </div>
     </div>
   );

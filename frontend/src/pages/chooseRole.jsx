@@ -1,54 +1,71 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Users } from 'lucide-react';
+import { GraduationCap, User, ChevronRight } from 'lucide-react';
 
 export default function ChooseRole() {
   const navigate = useNavigate();
 
   return (
-    // Menggunakan gradasi diagonal yang kuat dari indigo ke purple (menjamin background berwarna)
-    <div className="flex flex-col items-center justify-center min-h-screen bg-linear-to-br from-indigo-900 via-indigo-700 to-purple-800 px-4">
-      
-      {/* Bagian Judul */}
-      <div className="text-center text-white mb-12 animate-fade-in">
-        <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-md">
-          APLIKASI KUIS
-        </h1>
-        <p className="text-amber-400 font-semibold tracking-widest text-xs uppercase mt-2">
-          UNIVERSITAS PERJUANGAN 
-        </p>
-      </div>
-      
-      {/* Grid Pilihan Kartu */}
-      <div className="w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div className="flex items-center justify-center min-h-screen bg-[#0B1B3D] px-4 py-8">
+      {/* Mobile Frame Container */}
+      <div className="w-full max-w-sm bg-[#0B1B3D] flex flex-col justify-between h-[640px] text-white">
         
-        {/* Tombol Pengajar */}
-        <button 
-          onClick={() => navigate('/login')}
-          className="flex flex-col items-center p-8 bg-white hover:bg-slate-50 rounded-3xl shadow-2xl border-2 border-transparent hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-2 text-slate-800 group"
-        >
-          <div className="p-5 bg-indigo-100 rounded-2xl text-indigo-600 mb-5 group-hover:bg-indigo-600 group-hover:text-white group-hover:rotate-6 transition-all duration-300 shadow-md">
-            <GraduationCap size={44} />
+        {/* Status Bar simulation */}
+        <div className="flex justify-between items-center text-xs px-6 pt-2 opacity-80">
+          <span>13:46</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 bg-white/20 rounded-full flex items-center justify-center text-[8px]">⚡</span>
+            <span className="w-4.5 h-3 bg-white/20 rounded-xs"></span>
           </div>
-          <span className="text-2xl font-bold tracking-tight">Masuk Pengajar</span>
-          <p className="text-xs text-slate-500 text-center mt-3 leading-relaxed">
-            Kelola kuis, bank soal, dan monitoring skor live secara realtime.
-          </p>
-        </button>
+        </div>
 
-        {/* Tombol Peserta */}
-        <button 
-          onClick={() => navigate('/join')}
-          className="flex flex-col items-center p-8 bg-white hover:bg-slate-50 rounded-3xl shadow-2xl border-2 border-transparent hover:border-amber-400 transition-all duration-300 transform hover:-translate-y-2 text-slate-800 group"
-        >
-          <div className="p-5 bg-purple-100 rounded-2xl text-purple-600 mb-5 group-hover:bg-purple-600 group-hover:text-white group-hover:-rotate-6 transition-all duration-300 shadow-md">
-            <Users size={44} />
+        {/* Content */}
+        <div className="px-6 flex-1 flex flex-col justify-center mb-12">
+          <h2 className="text-xl font-bold text-slate-100 mb-8 text-left">
+            Pilih Peran sebagai:
+          </h2>
+
+          <div className="space-y-4">
+            {/* Card Peserta Kuis */}
+            <button
+              onClick={() => navigate('/join')}
+              className="w-full flex items-center p-4 bg-white hover:bg-slate-50 active:bg-slate-100 rounded-2xl transition duration-200 text-left shadow-lg group"
+            >
+              {/* Yellow Icon Container */}
+              <div className="w-12 h-12 bg-amber-400 text-white rounded-full flex items-center justify-center mr-4 shrink-0 shadow-md">
+                <User size={24} className="stroke-[2.5]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-slate-800 font-bold text-base leading-tight">Peserta Kuis</p>
+                <p className="text-slate-400 text-xs mt-1 truncate">Masuk untuk menjawab kuis</p>
+              </div>
+              <ChevronRight className="text-slate-400 group-hover:translate-x-1 transition duration-200 ml-2" size={20} />
+            </button>
+
+            {/* Card Pengajar */}
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full flex items-center p-4 bg-white hover:bg-slate-50 active:bg-slate-100 rounded-2xl transition duration-200 text-left shadow-lg group"
+            >
+              {/* Blue Icon Container */}
+              <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center mr-4 shrink-0 shadow-md">
+                <GraduationCap size={24} className="stroke-[2.5]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-slate-800 font-bold text-base leading-tight">Pengajar</p>
+                <p className="text-slate-400 text-xs mt-1 truncate">Buat soal dan bagikan Kuis</p>
+              </div>
+              <ChevronRight className="text-slate-400 group-hover:translate-x-1 transition duration-200 ml-2" size={20} />
+            </button>
           </div>
-          <span className="text-2xl font-bold tracking-tight">Masuk Peserta</span>
-          <p className="text-xs text-slate-500 text-center mt-3 leading-relaxed">
-            Gabung instan menggunakan PIN kuis tanpa perlu ribet registrasi login.
-          </p>
-        </button>
+        </div>
+
+        {/* Footer simulation */}
+        <div className="flex justify-around items-center py-4 border-t border-white/10 text-white/50 text-sm">
+          <button className="hover:text-white transition">☰</button>
+          <button className="hover:text-white transition">⌂</button>
+          <button className="hover:text-white transition">⟨</button>
+        </div>
 
       </div>
     </div>

@@ -28,17 +28,16 @@ export default function InputNama() {
     setLoading(true);
 
     try {
-      const quizId = localStorage.getItem('joined_quiz_id');
       const response = await API.post('/participants', {
-        id_quiz: quizId,
-        nama_peserta: name.trim(),
+        quiz_id: quizId,
+        name: name.trim(),
         avatar: selectedAvatar
       });
 
       // Save participant session
-      localStorage.setItem('id_peserta', response.data.id_peserta);
-      localStorage.setItem('nama_peserta', response.data.nama_peserta);
-      localStorage.setItem('avatar_peserta', response.data.avatar);
+      localStorage.setItem('id_peserta', response.data.data.id);
+      localStorage.setItem('nama_peserta', response.data.data.name);
+      localStorage.setItem('avatar_peserta', selectedAvatar);
       
       setIsWaiting(true);
     } catch (err) {

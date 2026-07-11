@@ -8,6 +8,7 @@ export default function QuizPlay() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [feedback, setFeedback] = useState(null);
   
   // Timer state
   const [timeLeft, setTimeLeft] = useState(15);
@@ -62,8 +63,30 @@ export default function QuizPlay() {
     handleAnswerSubmit('-');
   };
 
+  const moveToNextQuestion = async () => {
+    if (currentIndex + 1 < questions.length) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      // Jika soal habis, hitung hasil kuis dan lempar ke leaderboard
+      await API.post('/results', { id_quiz: quizId, id_peserta: participantId });
+      
+      // Also update the active room status to finished if needed
+      const roomStr = localStorage.getItem('db_active_room');
+      if (roomStr) {
+        const room = JSON.parse(roomStr);
+        // If we are simulating, we can set it to finished
+        room.status = 'finished';
+        localStorage.setItem('db_active_room', JSON.stringify(room));
+        window.dispatchEvent(new Event('storage_update'));
+      }
+
+      navigate('/leaderboard');
+    }
+  };
+
   const handleAnswerSubmit = async (selectedOption) => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (feedback) return; // Prevent multiple submissions
 
     try {
       const currentQuestion = questions[currentIndex];
@@ -75,24 +98,27 @@ export default function QuizPlay() {
         jawaban_pilihan: selectedOption
       });
 
-      // Lanjut ke soal berikutnya jika masih ada
-      if (currentIndex + 1 < questions.length) {
-        setCurrentIndex(currentIndex + 1);
-      } else {
-        // Jika soal habis, hitung hasil kuis dan lempar ke leaderboard
-        await API.post('/results', { id_quiz: quizId, id_peserta: participantId });
-        
-        // Also update the active room status to finished if needed
-        const roomStr = localStorage.getItem('db_active_room');
-        if (roomStr) {
-          const room = JSON.parse(roomStr);
-          // If we are simulating, we can set it to finished
-          room.status = 'finished';
-          localStorage.setItem('db_active_room', JSON.stringify(room));
-          window.dispatchEvent(new Event('storage_update'));
-        }
+      const isCorrect = selectedOption === currentQuestion.jawaban_benar;
 
-        navigate('/leaderboard');
+      if (!isCorrect) {
+        const correctOptKey = 'opsi_' + currentQuestion.jawaban_benar.toLowerCase();
+        const correctAnswerText = currentQuestion[correctOptKey] || currentQuestion.jawaban_benar;
+        
+        setFeedback({
+          type: selectedOption === '-' ? 'timeout' : 'wrong',
+          correctAnswerText: `${currentQuestion.jawaban_benar}. ${correctAnswerText}`
+        });
+        
+        setTimeout(() => {
+          setFeedback(null);
+          moveToNextQuestion();
+        }, 3000);
+      } else {
+        setFeedback({ type: 'correct' });
+        setTimeout(() => {
+          setFeedback(null);
+          moveToNextQuestion();
+        }, 1500);
       }
     } catch (err) {
       alert('Gagal mengirim jawaban.');
@@ -136,8 +162,34 @@ export default function QuizPlay() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#0B1B3D] px-4 py-8">
       {/* Mobile-style Viewport Frame */}
-      <div className="w-full max-w-sm bg-[#0B1B3D] flex flex-col justify-between h-[640px] text-white shadow-2xl rounded-3xl overflow-hidden border border-white/5">
+      <div className="w-full max-w-sm bg-[#0B1B3D] flex flex-col justify-between h-[640px] text-white shadow-2xl rounded-3xl overflow-hidden border border-white/5 relative">
         
+        {feedback && (
+          <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300 ${feedback.type === 'correct' ? 'bg-green-900/95' : 'bg-red-900/95'}`}>
+             {feedback.type === 'correct' ? (
+                <>
+                  <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-lg">
+                    ✅
+                  </div>
+                  <h2 className="text-2xl font-bold text-white">Jawaban Benar!</h2>
+                </>
+             ) : (
+                <>
+                  <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-3xl mb-4 shadow-lg">
+                    {feedback.type === 'timeout' ? '⏰' : '❌'}
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {feedback.type === 'timeout' ? 'Waktu Habis!' : 'Jawaban Salah!'}
+                  </h2>
+                  <p className="text-white/80 text-sm mb-4">Jawaban yang benar adalah:</p>
+                  <div className="bg-white/10 border border-white/20 p-4 rounded-xl text-white font-bold text-lg w-full">
+                    {feedback.correctAnswerText}
+                  </div>
+                </>
+             )}
+          </div>
+        )}
+
         {/* Status Bar simulation */}
         <div className="flex justify-between items-center text-xs px-6 pt-3 opacity-80 bg-[#07132B]">
           <span>13:46</span>

@@ -34,6 +34,12 @@ export default function PinQuiz() {
     };
   }, []);
 
+  useEffect(() => {
+    if (activeRoom.status === 'finished') {
+      navigate('/leaderboard');
+    }
+  }, [activeRoom.status, navigate]);
+
   const handleStartQuiz = () => {
     const updatedRoom = {
       ...activeRoom,
@@ -43,10 +49,15 @@ export default function PinQuiz() {
     localStorage.setItem('db_active_room', JSON.stringify(updatedRoom));
     // Dispatch event so same tab knows it
     window.dispatchEvent(new Event('storage_update'));
-    
-    // Redirect to show results or keep monitoring
-    alert('Kuis dimulai! Peserta sedang mengerjakan soal.');
-    // Let's redirect to leaderboard or just keep monitoring page
+  };
+
+  const handleStopQuiz = () => {
+    const updatedRoom = {
+      ...activeRoom,
+      status: 'finished'
+    };
+    localStorage.setItem('db_active_room', JSON.stringify(updatedRoom));
+    window.dispatchEvent(new Event('storage_update'));
     navigate('/leaderboard');
   };
 
@@ -113,16 +124,18 @@ export default function PinQuiz() {
           
           {/* PIN Card */}
           <div className="text-center space-y-2">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Bagikan PIN kuis ini ke peserta:</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              {activeRoom.status === 'playing' ? 'Kuis Sedang Berlangsung' : 'Bagikan PIN kuis ini ke peserta:'}
+            </p>
             <h1 className="text-5xl font-black tracking-wider text-yellow-400 bg-white/5 border border-white/10 py-5 rounded-3xl shadow-inner font-mono">
-              {formatPin(activeRoom.pin)}
+              {activeRoom.status === 'playing' ? 'LIVE' : formatPin(activeRoom.pin)}
             </h1>
           </div>
 
           {/* Joined Participants monitor (Matches Page 17, item 6 right) */}
           <div className="flex-1 flex flex-col justify-center my-6 space-y-3">
             <div className="flex items-center justify-between text-xs font-bold text-slate-300 border-b border-white/5 pb-2">
-              <span>Menunggu peserta Bergabung</span>
+              <span>{activeRoom.status === 'playing' ? 'Peserta Sedang Mengerjakan' : 'Menunggu peserta Bergabung'}</span>
               <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full flex items-center gap-1">
                 <Users size={10} /> {activeRoom.participants.length} anggota bergabung
               </span>
@@ -152,14 +165,23 @@ export default function PinQuiz() {
           </div>
 
           {/* Action Button */}
-          <button
-            onClick={handleStartQuiz}
-            disabled={activeRoom.participants.length === 0}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-slate-700 text-white font-bold rounded-full text-sm transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 disabled:shadow-none"
-          >
-            <Play size={16} fill="white" />
-            <span>Mulai Kuis</span>
-          </button>
+          {activeRoom.status !== 'playing' ? (
+            <button
+              onClick={handleStartQuiz}
+              disabled={activeRoom.participants.length === 0}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-slate-700 text-white font-bold rounded-full text-sm transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/10 disabled:shadow-none"
+            >
+              <Play size={16} fill="white" />
+              <span>Mulai Kuis</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleStopQuiz}
+              className="w-full py-4 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-full text-sm transition duration-200 flex items-center justify-center gap-2 shadow-lg shadow-red-500/10"
+            >
+              <span>Akhiri Kuis Paksa</span>
+            </button>
+          )}
 
         </div>
 

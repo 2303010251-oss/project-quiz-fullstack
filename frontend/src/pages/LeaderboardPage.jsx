@@ -170,7 +170,19 @@ export default function LeaderboardPage() {
 
           {/* Action Button */}
           <button 
-            onClick={() => { localStorage.clear(); navigate('/'); }}
+            onClick={() => { 
+              const isPeserta = !!localStorage.getItem('id_peserta');
+              if (isPeserta) {
+                localStorage.removeItem('joined_quiz_id');
+                localStorage.removeItem('id_peserta');
+                localStorage.removeItem('nama_peserta');
+                localStorage.removeItem('joined_quiz_pin');
+                navigate('/join');
+              } else {
+                localStorage.removeItem('db_active_room');
+                navigate('/dashboard');
+              }
+            }}
             className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 active:bg-white/20 text-slate-100 font-bold rounded-full text-xs transition duration-200 mt-2 flex items-center justify-center gap-2 shadow-lg"
           >
             <Home size={14} />
